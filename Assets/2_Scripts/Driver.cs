@@ -11,6 +11,7 @@ public class Driver : MonoBehaviour
 
     [SerializeField] float slowSpeedRatio = 0.5f;
     [SerializeField] float boostSpeedRatio = 1.5f;
+    [SerializeField] float slowDuration = 2f; // 느려지는 지속 시간 (2초)
     [SerializeField] float boostDuration = 3f; // 부스터 지속 시간 (3초)
 
     private float defaultSpeed; // 원래 속도 저장
@@ -39,6 +40,8 @@ public class Driver : MonoBehaviour
     private void OnCollisionEnter2D(Collision2D collision)
     {
         moveSpeed = slowSpeed;
+
+        StartCoroutine(ResetSpeedAfterDelay(slowDuration));
     }
 
     void Update()
