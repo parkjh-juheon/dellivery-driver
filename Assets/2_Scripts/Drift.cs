@@ -6,6 +6,9 @@ public class Drift : MonoBehaviour
     [SerializeField] float steering = 3f;   //조향 속도
     [SerializeField] float maxSpeed = 10f;  // 최대속도 제한
     [SerializeField] float driftFactor = 0.95f; //낮을수록 더 미끄러짐 
+
+    [SerializeField] ParticleSystem SmokeLeft;
+    [SerializeField] ParticleSystem SmokeRight;
     
     Rigidbody2D rb;
 
@@ -31,5 +34,22 @@ public class Drift : MonoBehaviour
         Vector2 sideVelocity = transform.right* Vector2.Dot(rb.linearVelocity, transform.up);
 
         rb.linearVelocity = forwardVelocity + (sideVelocity * driftFactor);
+    }
+
+    private void Update()
+    {
+        float sidewayVelcity =  Vector2.Dot(rb.linearVelocity, transform.right);
+
+        bool isDrfting = rb.linearVelocity.magnitude > 2f && Mathf.Abs(sidewayVelcity) > 1f;
+        if (isDrfting)
+        {
+            if(!SmokeLeft.isPlaying) SmokeLeft.Play();
+            if (!SmokeRight.isPlaying) SmokeRight.Play();
+        }
+        else
+        {
+            if(SmokeLeft.isPlaying) SmokeLeft.Stop();
+            if (SmokeRight.isPlaying) SmokeRight.Stop();
+        }
     }
 }
