@@ -1,4 +1,5 @@
 using UnityEngine;
+using UnityEngine.Audio;
 
 public class Drift : MonoBehaviour
 {
@@ -11,10 +12,12 @@ public class Drift : MonoBehaviour
     [SerializeField] ParticleSystem SmokeRight;
     
     Rigidbody2D rb;
+    AudioSource audioSource;
 
     void Start()
     {
         rb = GetComponent<Rigidbody2D>();
+        audioSource = rb.GetComponent<AudioSource>();
     }
 
     void FixedUpdate()
@@ -43,12 +46,14 @@ public class Drift : MonoBehaviour
         bool isDrfting = rb.linearVelocity.magnitude > 2f && Mathf.Abs(sidewayVelcity) > 1f;
         if (isDrfting)
         {
+            if(!audioSource.isPlaying) audioSource.Play();
             if(!SmokeLeft.isPlaying) SmokeLeft.Play();
             if (!SmokeRight.isPlaying) SmokeRight.Play();
         }
         else
         {
-            if(SmokeLeft.isPlaying) SmokeLeft.Stop();
+            if (!audioSource.isPlaying) audioSource.Stop();
+            if (SmokeLeft.isPlaying) SmokeLeft.Stop();
             if (SmokeRight.isPlaying) SmokeRight.Stop();
         }
     }
