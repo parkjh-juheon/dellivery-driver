@@ -1,60 +1,125 @@
 using UnityEngine;
-using UnityEngine.Audio;
 
 public class Drift : MonoBehaviour
 {
-    [SerializeField] float accleration = 20;    //전진,후진 가속도
-    [SerializeField] float steering = 3f;   //조향 속도
-    [SerializeField] float maxSpeed = 10f;  // 최대속도 제한
-    [SerializeField] float driftFactor = 0.95f; //낮을수록 더 미끄러짐 
+    [Header("전진/후진 가속도")] public float acceleration = 20f;
+    [Header("조향 속도")] public float steering = 3f;
+    [Header("낮을수록 더 미끄러짐")] public float driftFactor = 0.95f;
+    [Header("최대 속도 제한")] public float maxSpeed = 10f;
 
-    [SerializeField] ParticleSystem SmokeLeft;
-    [SerializeField] ParticleSystem SmokeRight;
-    
-    Rigidbody2D rb;
-    AudioSource audioSource;
+    [SerializeField] float slowAccelerationRaito = 0.5f;
+    [SerializeField] float boostAccelerationRaito = 1.5f;
+    [SerializeField] float speedTime = 3f;
 
+    float defaulAcceleration;
+    float slowAcceleration;
+    float boostAcceleration;
+
+    public ParticleSystem smokeLeft;
+    public ParticleSystem smokeRight;
+
+    public float driftThreshold = 1.5f;
+
+    private Rigidbody2D rb;
+    private AudioSource audioSource;
+    public TrailRenderer leftTrail;
+    public TrailRenderer rightTrail;
+    private SpriteRenderer spriteRenderer;
     void Start()
     {
         rb = GetComponent<Rigidbody2D>();
         audioSource = rb.GetComponent<AudioSource>();
+        spriteRenderer = GetComponent<SpriteRenderer>();
+
+        defaulAcceleration = acceleration;
+        slowAcceleration = acceleration * slowAccelerationRaito;
+        boostAcceleration = acceleration * boostAccelerationRaito;
     }
 
-    void FixedUpdate()
+    private void FixedUpdate()
     {
         float speed = Vector2.Dot(rb.linearVelocity, transform.up);
         if (speed < maxSpeed)
         {
-            rb.AddForce(transform.up * Input.GetAxis("Vertical") * accleration);
+            rb.AddForce(transform.up * Input.GetAxis("Vertical") * acceleration);
         }
 
-        //float turnAmount = Input.GetAxis("Horizontal") * steering * speed * Time.fixedDeltaTime ;
+        // 조향 입력
+        //float turnAmount = Input.GetAxis("Horizontal") * steering * speed * Time.fixedDeltaTime;
         float turnAmount = Input.GetAxis("Horizontal") * steering * Mathf.Clamp(speed / maxSpeed, 0.4f, 1f);
-        rb.MoveRotation(rb.rotation - turnAmount);
+        rb.MoveRotation(rb.rotation - turnAmount); // Z축 회전
 
-        //Drift
+        // 드리프트 적용
+        ApplyDrift();
+    }
+
+    void ApplyDrift()
+    {
+        // 현재 속도를 차체 기준으로 나눔
         Vector2 forwardVelocity = transform.up * Vector2.Dot(rb.linearVelocity, transform.up);
-        Vector2 sideVelocity = transform.right* Vector2.Dot(rb.linearVelocity, transform.up);
+        Vector2 sideVelocity = transform.right * Vector2.Dot(rb.linearVelocity, transform.right);
 
-        rb.linearVelocity = forwardVelocity + (sideVelocity * driftFactor);
+        // 옆으로 미끄러지는 속도를 줄임 (마찰처럼)
+        rb.linearVelocity = forwardVelocity + sideVelocity * driftFactor;
     }
 
     private void Update()
     {
-        float sidewayVelcity =  Vector2.Dot(rb.linearVelocity, transform.right);
+        float sidewaysVelocity = Vector2.Dot(rb.linearVelocity, transform.right);
+        bool isDrifting = Mathf.Abs(sidewaysVelocity) > driftThreshold && rb.linearVelocity.magnitude > 2f;
 
-        bool isDrfting = rb.linearVelocity.magnitude > 2f && Mathf.Abs(sidewayVelcity) > 1f;
-        if (isDrfting)
+        if (isDrifting)
         {
-            if(!audioSource.isPlaying) audioSource.Play();
-            if(!SmokeLeft.isPlaying) SmokeLeft.Play();
-            if (!SmokeRight.isPlaying) SmokeRight.Play();
+            if (!audioSource.isPlaying) audioSource.Play();
+            if (!smokeLeft.isPlaying) smokeLeft.Play();
+            if (!smokeRight.isPlaying) smokeRight.Play();
         }
         else
         {
-            if (!audioSource.isPlaying) audioSource.Stop();
-            if (SmokeLeft.isPlaying) SmokeLeft.Stop();
-            if (SmokeRight.isPlaying) SmokeRight.Stop();
+            if (audioSource.isPlaying) audioSource.Stop();
+            if (smokeLeft.isPlaying) smokeLeft.Stop();
+            if (smokeRight.isPlaying) smokeRight.Stop();
         }
+
+        audioSource.volume = Mathf.Lerp(audioSource.volume, isDrifting ? 1.0f : 0.0f, Time.deltaTime * 5f);
+        leftTrail.emitting = isDrifting;
+        rightTrail.emitting = isDrifting;
+    }
+
+    private void OnTriggerEnter2D(Collider2D collision)
+    {
+        if (collision.gameObject.CompareTag("Boost"))
+        {
+            acceleration = boostAcceleration; // ← 여기 수정!
+            Debug.Log("Boooost!!");
+
+            Invoke("ResetAcceleration", speedTime);
+        }
+    }
+
+    void ResetAcceleration()
+    {
+        acceleration = defaulAcceleration;
+    }
+
+    private void OnCollisionEnter2D(Collision2D collision)
+    {
+        acceleration = slowAcceleration;
+        Debug.Log("느려");
+
+        if (spriteRenderer != null)
+        {
+            Color currentColor = spriteRenderer.color;
+
+            // 색을 점점 더 진하게 (밝기를 줄임)
+            Color darkerColor = currentColor * 0.9f; // R, G, B 모두 10% 어둡게
+
+            // 알파(투명도)는 유지
+            darkerColor.a = currentColor.a;
+
+            spriteRenderer.color = darkerColor;
+        }
+
+        Invoke("ResetAcceleration", speedTime);
     }
 }

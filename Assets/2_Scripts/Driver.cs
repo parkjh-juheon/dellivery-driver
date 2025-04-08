@@ -18,11 +18,15 @@ public class Driver : MonoBehaviour
     private float slowSpeed;
     private float boostSpeed;
 
+    private SpriteRenderer spriteRenderer;
+
     private void Start()
     {
         defaultSpeed = moveSpeed; // 초기 속도 저장
         slowSpeed = moveSpeed * slowSpeedRatio;
         boostSpeed = moveSpeed * boostSpeedRatio;
+
+        spriteRenderer = GetComponent<SpriteRenderer>();
     }
 
     private void OnTriggerEnter2D(Collider2D other)
@@ -35,14 +39,38 @@ public class Driver : MonoBehaviour
             // 일정 시간 후 속도를 원래대로 복구하는 코루틴 실행
             StartCoroutine(ResetSpeedAfterDelay(boostDuration));
         }
+
+        if (other.CompareTag("Road"))
+        {
+            moveSpeed = defaultSpeed;
+            Debug.Log("도로 진입: 정상 속도");
+        }
+    }
+
+    private void OnTriggerExit2D(Collider2D other)
+    {
+        if (other.CompareTag("Road"))
+        {
+            moveSpeed = slowSpeed;
+            Debug.Log("도로 벗어남: 느려짐");
+        }
     }
 
     private void OnCollisionEnter2D(Collision2D collision)
     {
         moveSpeed = slowSpeed;
-
         StartCoroutine(ResetSpeedAfterDelay(slowDuration));
+
+        // 색 진하게
+        if (spriteRenderer != null)
+        {
+            Color currentColor = spriteRenderer.color;
+            Color darker = currentColor * 0.9f;
+            darker.a = currentColor.a;
+            spriteRenderer.color = darker;
+        }
     }
+
 
     void Update()
     {
