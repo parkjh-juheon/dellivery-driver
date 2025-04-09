@@ -8,6 +8,7 @@ TagManager:
   - chicken
   - Boost
   - Road
+  - Well
   layers:
   - Default
   - TransparentFX

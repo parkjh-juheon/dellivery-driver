@@ -1,11 +1,11 @@
-using UnityEngine;
+ï»¿using UnityEngine;
 
 public class Drift : MonoBehaviour
 {
-    [Header("ÀüÁø/ÈÄÁø °¡¼Óµµ")] public float acceleration = 20f;
-    [Header("Á¶Çâ ¼Óµµ")] public float steering = 3f;
-    [Header("³·À»¼ö·Ï ´õ ¹Ì²ô·¯Áü")] public float driftFactor = 0.95f;
-    [Header("ÃÖ´ë ¼Óµµ Á¦ÇÑ")] public float maxSpeed = 10f;
+    [Header("ì „ì§„/í›„ì§„ ê°€ì†ë„")] public float acceleration = 20f;
+    [Header("ì¡°í–¥ ì†ë„")] public float steering = 3f;
+    [Header("ë‚®ì„ìˆ˜ë¡ ë” ë¯¸ë„ëŸ¬ì§")] public float driftFactor = 0.95f;
+    [Header("ìµœëŒ€ ì†ë„ ì œí•œ")] public float maxSpeed = 10f;
 
     [SerializeField] float slowAccelerationRaito = 0.5f;
     [SerializeField] float boostAccelerationRaito = 1.5f;
@@ -25,6 +25,8 @@ public class Drift : MonoBehaviour
     public TrailRenderer leftTrail;
     public TrailRenderer rightTrail;
     private SpriteRenderer spriteRenderer;
+    private float previousSpeed = 0f;
+
     void Start()
     {
         rb = GetComponent<Rigidbody2D>();
@@ -44,22 +46,22 @@ public class Drift : MonoBehaviour
             rb.AddForce(transform.up * Input.GetAxis("Vertical") * acceleration);
         }
 
-        // Á¶Çâ ÀÔ·Â
+        // ì¡°í–¥ ì…ë ¥
         //float turnAmount = Input.GetAxis("Horizontal") * steering * speed * Time.fixedDeltaTime;
         float turnAmount = Input.GetAxis("Horizontal") * steering * Mathf.Clamp(speed / maxSpeed, 0.4f, 1f);
-        rb.MoveRotation(rb.rotation - turnAmount); // ZÃà È¸Àü
+        rb.MoveRotation(rb.rotation - turnAmount); // Zì¶• íšŒì „
 
-        // µå¸®ÇÁÆ® Àû¿ë
+        // ë“œë¦¬í”„íŠ¸ ì ìš©
         ApplyDrift();
     }
 
     void ApplyDrift()
     {
-        // ÇöÀç ¼Óµµ¸¦ Â÷Ã¼ ±âÁØÀ¸·Î ³ª´®
+        // í˜„ì¬ ì†ë„ë¥¼ ì°¨ì²´ ê¸°ì¤€ìœ¼ë¡œ ë‚˜ëˆ”
         Vector2 forwardVelocity = transform.up * Vector2.Dot(rb.linearVelocity, transform.up);
         Vector2 sideVelocity = transform.right * Vector2.Dot(rb.linearVelocity, transform.right);
 
-        // ¿·À¸·Î ¹Ì²ô·¯Áö´Â ¼Óµµ¸¦ ÁÙÀÓ (¸¶ÂûÃ³·³)
+        // ì˜†ìœ¼ë¡œ ë¯¸ë„ëŸ¬ì§€ëŠ” ì†ë„ë¥¼ ì¤„ì„ (ë§ˆì°°ì²˜ëŸ¼)
         rb.linearVelocity = forwardVelocity + sideVelocity * driftFactor;
     }
 
@@ -84,16 +86,46 @@ public class Drift : MonoBehaviour
         audioSource.volume = Mathf.Lerp(audioSource.volume, isDrifting ? 1.0f : 0.0f, Time.deltaTime * 5f);
         leftTrail.emitting = isDrifting;
         rightTrail.emitting = isDrifting;
+
+        // í˜„ì¬ ì†ë„ ê³„ì‚°
+        float currentSpeed = rb.linearVelocity.magnitude;
+
+        // ì†ë„ ë³€í™”ê°€ í´ ë•Œë§Œ ì¶œë ¥ (ì‘ì€ í”ë“¤ë¦¼ì€ ë¬´ì‹œ)
+        if (Mathf.Abs(currentSpeed - previousSpeed) > 0.5f)
+        {
+            if (currentSpeed > previousSpeed)
+            {
+                Debug.Log("ì†ë„ê°€ ë¹¨ë¼ì¡ŒìŠµë‹ˆë‹¤! ğŸš—ğŸ’¨");
+            }
+            else
+            {
+                Debug.Log("ì†ë„ê°€ ëŠë ¤ì¡ŒìŠµë‹ˆë‹¤... ğŸŒ");
+            }
+        }
+
+        // ì´ì „ ì†ë„ ê°±ì‹ 
+        previousSpeed = currentSpeed;
     }
 
     private void OnTriggerEnter2D(Collider2D collision)
     {
         if (collision.gameObject.CompareTag("Boost"))
         {
-            acceleration = boostAcceleration; // ¡ç ¿©±â ¼öÁ¤!
+            acceleration = boostAcceleration; 
             Debug.Log("Boooost!!");
 
             Invoke("ResetAcceleration", speedTime);
+        }
+
+        if (collision.gameObject.CompareTag("Road"))
+        {
+            acceleration = slowAcceleration * 0.3f;
+            Debug.Log("ì´íƒˆí•¨");
+
+            Color currentColor = spriteRenderer.color;
+            Color darkerColor = currentColor * 0.9f;
+            darkerColor.a = currentColor.a;
+            spriteRenderer.color = darkerColor;
         }
     }
 
@@ -105,21 +137,32 @@ public class Drift : MonoBehaviour
     private void OnCollisionEnter2D(Collision2D collision)
     {
         acceleration = slowAcceleration;
-        Debug.Log("´À·Á");
+        Debug.Log("ëŠë ¤");
 
         if (spriteRenderer != null)
         {
             Color currentColor = spriteRenderer.color;
-
-            // »öÀ» Á¡Á¡ ´õ ÁøÇÏ°Ô (¹à±â¸¦ ÁÙÀÓ)
-            Color darkerColor = currentColor * 0.9f; // R, G, B ¸ğµÎ 10% ¾îµÓ°Ô
-
-            // ¾ËÆÄ(Åõ¸íµµ)´Â À¯Áö
+            Color darkerColor = currentColor * 0.9f;
             darkerColor.a = currentColor.a;
-
             spriteRenderer.color = darkerColor;
+
+            if (IsColorTooDark(darkerColor))
+            {
+                GameOver();
+            }
         }
 
         Invoke("ResetAcceleration", speedTime);
+
+        bool IsColorTooDark(Color color)
+        {
+            return color.r <= 0.2f && color.g <= 0.2f && color.b <= 0.2f;
+        }
+
+        void GameOver()
+        {
+            Debug.Log("ê²Œì„ ì˜¤ë²„!");
+            Time.timeScale = 0; // ì¼ì‹œì •ì§€
+        }
     }
 }
