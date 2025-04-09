@@ -1,4 +1,6 @@
 ﻿using UnityEngine;
+using TMPro;
+
 
 public class Drift : MonoBehaviour
 {
@@ -26,6 +28,7 @@ public class Drift : MonoBehaviour
     public TrailRenderer rightTrail;
     private SpriteRenderer spriteRenderer;
     private float previousSpeed = 0f;
+    public GameObject gameOverUI;
 
     void Start()
     {
@@ -163,6 +166,12 @@ public class Drift : MonoBehaviour
         {
             Debug.Log("게임 오버!");
             Time.timeScale = 0; // 일시정지
+
+
+            if (gameOverUI != null)
+            {
+                gameOverUI.SetActive(true); // UI 표시
+            }
         }
     }
 }
