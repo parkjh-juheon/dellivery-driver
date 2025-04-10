@@ -89,25 +89,6 @@ public class Drift : MonoBehaviour
         audioSource.volume = Mathf.Lerp(audioSource.volume, isDrifting ? 1.0f : 0.0f, Time.deltaTime * 5f);
         leftTrail.emitting = isDrifting;
         rightTrail.emitting = isDrifting;
-
-        // 현재 속도 계산
-        float currentSpeed = rb.linearVelocity.magnitude;
-
-        // 속도 변화가 클 때만 출력 (작은 흔들림은 무시)
-        if (Mathf.Abs(currentSpeed - previousSpeed) > 0.5f)
-        {
-            if (currentSpeed > previousSpeed)
-            {
-                Debug.Log("속도가 빨라졌습니다! 🚗💨");
-            }
-            else
-            {
-                Debug.Log("속도가 느려졌습니다... 🐌");
-            }
-        }
-
-        // 이전 속도 갱신
-        previousSpeed = currentSpeed;
     }
 
     private void OnTriggerEnter2D(Collider2D collision)
@@ -140,7 +121,7 @@ public class Drift : MonoBehaviour
     private void OnCollisionEnter2D(Collision2D collision)
     {
         acceleration = slowAcceleration;
-        Debug.Log("느려");
+        Debug.Log("아야");
 
         if (spriteRenderer != null)
         {

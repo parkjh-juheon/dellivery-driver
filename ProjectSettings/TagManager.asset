@@ -4,11 +4,18 @@
 TagManager:
   serializedVersion: 3
   tags:
-  - Customer
-  - chicken
   - Boost
   - Road
-  - Well
+  - apple
+  - banana
+  - peach
+  - grape
+  - orange
+  - CustomerP
+  - CustomerA
+  - CustomerB
+  - CustomerG
+  - CustomerO
   layers:
   - Default
   - TransparentFX
