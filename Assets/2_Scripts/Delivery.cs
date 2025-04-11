@@ -72,7 +72,7 @@ public class Delivery : MonoBehaviour
         {
             Debug.Log("바나나 픽업 됨");
             currentFruit = FruitType.Banana;
-            spriteRenderer.sprite = appleSprite;
+            spriteRenderer.sprite = bananaSprite;
             Destroy(collision.gameObject, delayDestory);
         }
 
@@ -87,7 +87,7 @@ public class Delivery : MonoBehaviour
         {
             Debug.Log("포도 픽업 됨");
             currentFruit = FruitType.Grape;
-            spriteRenderer.sprite = appleSprite;
+            spriteRenderer.sprite = grapeSprite;
             Destroy(collision.gameObject, delayDestory);
         }
 
